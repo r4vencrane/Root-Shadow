@@ -266,7 +266,7 @@ function options() {
   echo -e "${redColour}▌ 2 ▐${endColour} Environment"
   echo -e "${redColour}▌ 3 ▐${endColour} User / Group" 
   echo -e "${redColour}▌ 4 ▐${endColour} Permissions"
-  echo -e "${redColour}▌ 6 ▐${endColour} Job / Tasks"
+  echo -e "${redColour}▌ 5 ▐${endColour} Job / Tasks"
   echo -e "${redColour}▌ 6 ▐${endColour} Networking"
   echo -e "${redColour}▌ 7 ▐${endColour} Services"
   echo -e "${redColour}▌ 8 ▐${endColour} Software"
@@ -303,7 +303,7 @@ function select-options(){
     software_enum
     
   else 
-    echo -e "${redColour}[!] You have to select a number! [1-4]${endColour}"
+    echo -e "${redColour}[!] You have to select a number! [1-8]${endColour}"
   fi 
 
 
