@@ -52,11 +52,33 @@ function interesting_bins(){
 
 user=$(whoami)
 
-function environment_enum() {
+
+function system_enum() {
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Kernel & Linux OS Version${endColour}$separator"
+  uname -a
+  [ -f /etc/os-release ] && cat /etc/os-release || cat /etc/*-release 2>/dev/null
+  echo -e "\nCurrent runlevel: $(runlevel 2>/dev/null)"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Loaded Kernel Modules${endColour}$separator"
+  lsmod 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Kernel Boot Parameters${endColour}$separator"
+  [ -f /proc/cmdline ] && cat /proc/cmdline
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Kernel Sysctl Settings${endColour}$separator"
+  sysctl -a 2>/dev/null | grep -E "kernel|fs.suid_dumpable|core_pattern" | grep -vE '^(net|vm)'
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Kernel Symbols (if readable)${endColour}$separator"
+  [ -r /proc/kallsyms ] && head -n 10 /proc/kallsyms || echo "Access to /proc/kallsyms denied"
+}
+
+function env_enum() {
   local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
   local current_user=$(whoami)
 
-  echo -e "$separator\n\t\t\t\t\t ${purpleColour}Current User & PATH${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Current User & PATH${endColour}$separator"
   echo "[+] Current User: $current_user"
   echo "[+] UID: $(id -u) | GID: $(id -g) | Groups: $(id)"
   echo "[+] PATH: $PATH"
@@ -64,28 +86,36 @@ function environment_enum() {
   echo -e "$separator\n\t\t\t\t\t${purpleColour}Environment Variables${endColour}$separator"
   printenv | sort
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}CPU & Architecture Info${endColour}$separator"
-  lscpu 2>/dev/null || echo "lscpu not available"
-
   echo -e "$separator\n\t\t\t\t\t${purpleColour}Shells Configured on System${endColour}$separator"
   [ -f /etc/shells ] && cat /etc/shells || echo "Shells file not found"
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Mounted File Systems${endColour}$separator"
-  df -hT
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Python Path (PYTHONPATH)${endColour}$separator"
+  python3 -c 'import sys; print("\n".join(sys.path))' 2>/dev/null || echo "Python3 not found"
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}fstab (Potential Unmounted Partitions)${endColour}$separator"
-  grep -v "^#" /etc/fstab | column -t 2>/dev/null
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Files not owned by user but writable by group${endColour}$separator"
+  find / -writable ! -user "$(whoami)" -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Connected Routes & Interfaces${endColour}$separator"
-  ip a 2>/dev/null || ifconfig 2>/dev/null
-  echo -e "\nRouting Table:"
-  route -n 2>/dev/null || ip route 2>/dev/null
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Files owned by our user${endColour}$separator"
+  find / -user "$(whoami)" -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Known Hosts (ARP Table)${endColour}$separator"
-  arp -a 2>/dev/null || echo "ARP command not available"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Temp File Locations${endColour}$separator"
+  ls -l /tmp /var/tmp /dev/shm
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}DNS Resolver Configuration${endColour}$separator"
-  cat /etc/resolv.conf 2>/dev/null
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hidden Files Owned by Current User${endColour}$separator"
+  find / -type f -name ".*" -user "$current_user" -ls 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hidden Files not in /proc or /sys${endColour}$separator"
+  find / -name ".*" -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hidden Directories${endColour}$separator"
+  find / -type d -name ".*" -ls 2>/dev/null
+}
+
+function user_group_enum() {
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Users that have previoulsy logged onto the system${endColour}$separator"
+  lastlog 2>/dev/null | grep -v "Never" 2>/dev/null
 
   echo -e "$separator\n\t\t\t\t\t${purpleColour}Existing Local Users${endColour}$separator"
   grep -E "/home|/bin/bash" /etc/passwd
@@ -96,55 +126,112 @@ function environment_enum() {
 
   echo -e "$separator\n\t\t\t\t\t${purpleColour}System Groups & Members${endColour}$separator"
   getent group | awk -F: '$4' | column -t -s ":"
+  for i in $(cut -d":" -f1 /etc/passwd 2>/dev/null); do id $i; done 2>/dev/null
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Home Directory Contents${endColour}$separator"
-  ls -lh /home
-
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Temp File Locations${endColour}$separator"
-  ls -alh /tmp /var/tmp /dev/shm 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hidden Files Owned by Current User${endColour}$separator"
-  find / -type f -name ".*" -user "$current_user" -ls 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hidden Directories${endColour}$separator"
-  find / -type d -name ".*" -ls 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}Printer Info${endColour}$separator"
-  if command -v lpstat &>/dev/null; then
-    lpstat -p -d 2>/dev/null || echo "No printers configured"
-  else
-    echo "lpstat not installed"
+  readmasterpasswd=$(cat /etc/master.passwd 2>/dev/null)
+  if [ "$readmasterpasswd" ]; then 
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}We can read master passwd file!${endColour}$separator"
+    $readmasterpasswd
   fi
 
-  echo -e "$separator\n\t\t\t\t\t${purpleColour}END${endColour}$separator"
+  superman=$(grep -v -E "^#" /etc/passwd 2>/dev/null | awk -F: '$3 == 0 { print $1 }' 2>/dev/null)
+  if [ "$superman" ]; then
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}Super users account(s)${endColour}$separator"
+    $superman
+  fi 
+
+  sudoers=$(grep -v -E "^#" /etc/passwd 2>/dev/null | awk -F: '$3 == 0 { print $1 }' 2>/dev/null)
+  if [ "$sudoers" ]; then 
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}Sudoers Configuration${endColour}$separator"
+    $sudoers
+  fi 
+
+  sudoperms=$(echo '' | sudo -S -l -k 2>/dev/null)
+  if [ "$sudoperms" ]; then 
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}We can sudo without password!${endColour}$separator"
+    $sudoperms
+  fi 
+
+  whohasbeensudo=$(find /home -name .sudo_as_admin_successful 2>/dev/null)
+  if [ "$whohasbeensudo" ]; then  
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}Accounts that recently used sudo${endColour}$separator"
+    $whohasbeensudo
+  fi 
 }
 
+function job_tasks_enum() {
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
 
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Cron Jobs${endColour}$separator"
+  cat /etc/crontab 2>/dev/null
+  ls -la /etc/cron* 2>/dev/null
 
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Timers and Services (SystemD)${endColour}$separator"
+  systemctl list-timers --all 2>/dev/null
+  systemctl list-units --type=service --state=running 2>/dev/null
+}
+
+function networking_enum() {
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Connected Routes & Interfaces${endColour}$separator"
+  ip a 2>/dev/null || ifconfig 2>/dev/null
+  echo -e "\nRouting Table:"
+  route -n 2>/dev/null || ip route 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}DNS Resolver Configuration${endColour}$separator"
+  cat /etc/resolv.conf 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Hosts known (Comunication)${endColour}$separator"
+  arp a 2>/dev/null || echo "ARP command not available"
+}
+
+function services_enum() {
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Docker Images${endColour}$separator"
+  docker image ls 2>/dev/null
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Logrotate Configuration${endColour}$separator"
+  cat /etc/logrotate.conf
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Status File for Logrotate${endColour}$separator"
+  sudo cat /var/lib/logrotate.status
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Logrotate Version${endColour}$separator"
+  logrotate --version
+  echo -e "\n[+] ${grayColour} Vulnerable Versions:\n${endColour}${redColour}\t- 3.4.6\n\t- 3.11.0\n\t- 3.15.0\n\t- 3.18.0${endColour}"
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Corresponding Configurations${endColour}$separator"
+  ls /etc/logrotate.d/
+  cat /etc/logrotate.d/dpkg
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}List Mounts${endColour}$separator"
+  showmount -e $(ip a | grep tun0 | tail -n 1 | awk '{print $2}' | awk '{print $1}' FS="/")
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Selected Options (/etc/exports)${endColour}$separator"
+  cat /etc/exports
+}
 
 function permissions_enum() {
   local gtfobins_file="./wordlists/gtfobins.txt"
-  separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
+  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
 
-  echo -e "$separator\n\t\t\t\t ${purpleColour}SUID binaries owned by root${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}SUID binaries owned by root${endColour}$separator"
   find / -type f -user root -perm -4000 -exec ls -ldb {} \; 2>/dev/null
 
-  echo -e "$separator\n\t\t\t\t ${purpleColour}SUID+SGID binaries (perm 6000)${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}SUID+SGID binaries (perm 6000)${endColour}$separator"
   find / -type f -user root -perm -6000 -exec ls -ldb {} \; 2>/dev/null
 
-  echo -e "$separator\n\t\t\t\t  ${purpleColour}Capabilities on binaries${endColour}$separator"
-  getcap -r / 2>/dev/null | grep -v "No such file"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}All Existing Capabilities For All Binary Executables on Linux System${endColour}$separator"
+  find /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -type f -exec getcap {} \;
 
-  echo -e "$separator\n\t\t\t\t ${purpleColour}World-writable files/folders${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}World-writable files/folders${endColour}$separator"
   find / -type f -perm -2 -ls 2>/dev/null | grep -v "Permission denied"
   find / -type d -perm -2 -ls 2>/dev/null | grep -v "Permission denied"
 
-  echo -e "$separator\n\t\t\t\t ${purpleColour}Writable by current user (${USER})${endColour}$separator"
-  find / -writable -type f -user "$(whoami)" 2>/dev/null
-  find / -writable -type d -user "$(whoami)" 2>/dev/null
-
   if [ -f "$gtfobins_file" ]; then
-    echo -e "$separator\n\t\t\t\t ${purpleColour}Offline GTFOBins Match (SUID)${endColour}$separator"
+    echo -e "$separator\n\t\t\t\t\t${purpleColour}Offline GTFOBins Match (SUID)${endColour}$separator"
     for bin in $(find / -perm -4000 -type f 2>/dev/null); do
       basebin=$(basename "$bin")
       if grep -qx "$basebin" "$gtfobins_file"; then
@@ -157,102 +244,32 @@ function permissions_enum() {
   fi
 }
 
-
-
-function services_enum() {
+function software_enum() {
   local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
 
-  echo -e "$separator\n\t\t\t\t ${purpleColour}World-writable Files (excluding /proc)${endColour}$separator"
-  find / -path /proc -prune -o -type f -perm -o+w -exec ls -l {} \; 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}Docker Images (if installed)${endColour}$separator"
-  if command -v docker &>/dev/null; then
-    docker image ls 2>/dev/null
-  else
-    echo -e "${redColour}[-] Docker not installed.${endColour}"
-  fi
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}Logrotate Configuration${endColour}$separator"
-  [ -f /etc/logrotate.conf ] && cat /etc/logrotate.conf || echo -e "${redColour}[-] logrotate.conf not found.${endColour}"
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}Logrotate Status${endColour}$separator"
-  [ -f /var/lib/logrotate.status ] && cat /var/lib/logrotate.status || echo -e "${redColour}[-] logrotate.status not found.${endColour}"
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}Logrotate Version${endColour}$separator"
-  if command -v logrotate &>/dev/null; then
-    logrotate --version 2>/dev/null
-    echo -e "\n${redColour}[!] Vulnerable versions:${endColour}${redColour}\n\t- 3.4.6\n\t- 3.11.0\n\t- 3.15.0\n\t- 3.18.0${endColour}"
-  else
-    echo -e "${redColour}[-] logrotate binary not found.${endColour}"
-  fi
-
-  echo -e "$separator\n\t\t\t\t  ${purpleColour}Logrotate.d Config Files${endColour}$separator"
-  if [ -d /etc/logrotate.d ]; then
-    ls -la /etc/logrotate.d/
-    echo -e "\n${blueColour}[*] Showing 'dpkg' config if exists:${endColour}"
-    [ -f /etc/logrotate.d/dpkg ] && cat /etc/logrotate.d/dpkg
-  else
-    echo -e "${redColour}[-] /etc/logrotate.d not found.${endColour}"
-  fi
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}NFS Mounts via showmount${endColour}$separator"
-  if command -v showmount &>/dev/null; then
-    target_ip=$(ip a | grep -Eo 'inet [0-9\.]+' | grep -v 127 | awk '{print $2}' | head -n1 | cut -d'/' -f1)
-    showmount -e "$target_ip" 2>/dev/null || echo -e "${redColour}[-] No export found or showmount not permitted.${endColour}"
-  else
-    echo -e "${redColour}[-] showmount not installed.${endColour}"
-  fi
-
-  echo -e "$separator\n\t\t\t\t ${purpleColour}/etc/exports (NFS Configs)${endColour}$separator"
-  [ -f /etc/exports ] && cat /etc/exports || echo -e "${redColour}[-] /etc/exports not found.${endColour}"
-}
-
-
-function internals_enum() {
-  local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
-
-  echo -e "$separator\n\t\t\t\t${purpleColour} Kernel & Linux OS Version${endColour}$separator"
-  uname -a
-  [ -f /etc/os-release ] && cat /etc/os-release || cat /etc/lsb-release 2>/dev/null
-  echo -e "\nCurrent runlevel: $(runlevel 2>/dev/null)"
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Loaded Kernel Modules${endColour}$separator"
-  lsmod 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Kernel Boot Parameters${endColour}$separator"
-  [ -f /proc/cmdline ] && cat /proc/cmdline
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Python Path (PYTHONPATH)${endColour}$separator"
-  python3 -c 'import sys; print("\n".join(sys.path))' 2>/dev/null || echo "Python3 not found"
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Compiler Binaries Available${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Compiler Binaries Available${endColour}$separator"
   for bin in gcc clang cc g++ make ld; do
     if command -v $bin &>/dev/null; then
       echo "[+] $bin found: $(command -v $bin)"
     fi
   done
 
-  echo -e "$separator\n\t\t\t\t${purpleColour}Linked Shared Libraries (Dynamic Linker)${endColour}$separator"
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Linked Shared Libraries (Dynamic Linker)${endColour}$separator"
   ldd --version 2>/dev/null | head -n 1
   find /lib /lib64 /usr/lib /usr/lib64 -type f -name "libc.so.*" 2>/dev/null
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Kernel Sysctl Settings${endColour}$separator"
-  sysctl -a 2>/dev/null | grep -E "kernel|fs.suid_dumpable|core_pattern" | grep -vE '^(net|vm)'
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Kernel Symbols (if readable)${endColour}$separator"
-  [ -r /proc/kallsyms ] && head -n 10 /proc/kallsyms || echo "Access to /proc/kallsyms denied"
-
-  echo -e "$separator\n\t\t\t\t${purpleColour}Interesting Binaries${endColour}$separator"
-  interesting_bins
-
 }
 
 
+
 function options() {
-  echo -e "${redColour}▌ 1 ▐${endColour} Environment"
-  echo -e "${redColour}▌ 2 ▐${endColour} Permissions"
-  echo -e "${redColour}▌ 3 ▐${endColour} Services" 
-  echo -e "${redColour}▌ 4 ▐${endColour} Linux Internals"
+  echo -e "${redColour}▌ 1 ▐${endColour} System"
+  echo -e "${redColour}▌ 2 ▐${endColour} Environment"
+  echo -e "${redColour}▌ 3 ▐${endColour} User / Group" 
+  echo -e "${redColour}▌ 4 ▐${endColour} Permissions"
+  echo -e "${redColour}▌ 6 ▐${endColour} Job / Tasks"
+  echo -e "${redColour}▌ 6 ▐${endColour} Networking"
+  echo -e "${redColour}▌ 7 ▐${endColour} Services"
+  echo -e "${redColour}▌ 8 ▐${endColour} Software"
 }
 
 
@@ -269,13 +286,22 @@ function select-options(){
   read output_show
 
   if [[ $output_show -eq 1 ]]; then
-    environment_enum
+    system_enum
   elif [[ $output_show -eq 2 ]]; then 
-    permissions_enum
+    env_enum
   elif [[ $output_show -eq 3 ]]; then 
-    services_enum 
+     user_group_enum
   elif [[ $output_show -eq 4 ]]; then 
-    internals_enum 
+    permissions_enum
+  elif [[ $output_show -eq 5 ]]; then 
+    job_tasks_enum
+  elif [[ $output_show -eq 6 ]]; then 
+    networking_enum
+  elif [[ $output_show -eq 7 ]]; then
+    services_enum
+  elif [[ $output_show -eq 8 ]]; then
+    software_enum
+    
   else 
     echo -e "${redColour}[!] You have to select a number! [1-4]${endColour}"
   fi 
