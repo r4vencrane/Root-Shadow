@@ -8,9 +8,10 @@
   <img src="https://img.shields.io/badge/Interactive-Terminal-yellow?style=for-the-badge" />
 </p>
 
-![image](https://github.com/user-attachments/assets/cd9023c8-375e-43fd-bc90-40a6c9580efd)
 
+![image](https://github.com/user-attachments/assets/23ce1db5-44e1-45c4-b7fa-44824504af50)
 
+---
 
 ## About
 
@@ -33,7 +34,7 @@ All output is color-coded, neatly formatted, and designed for offline ops.
 
 ## Usage
 
-![image](https://github.com/user-attachments/assets/01ad095b-852c-4365-9c90-2fc559ae5914)
+![image](https://github.com/user-attachments/assets/7a373759-4bbd-4436-ac24-217f35d50371)
 
 
 
@@ -72,7 +73,7 @@ All output is color-coded, neatly formatted, and designed for offline ops.
 
 Displays an interactive panel:
 
-![image](https://github.com/user-attachments/assets/1411b072-1cb9-4593-9121-fe2f3b781567)
+![image](https://github.com/user-attachments/assets/b25d93aa-9d86-4b5f-96c8-be1c2f95b7a1)
 
 
 ## Designed For
