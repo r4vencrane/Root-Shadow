@@ -9,7 +9,7 @@
 </p>
 
 
-![image](https://github.com/user-attachments/assets/23ce1db5-44e1-45c4-b7fa-44824504af50)
+![image](https://github.com/user-attachments/assets/3106b3da-60c5-48a6-9cd5-461ac4f492b2)
 
 ---
 
@@ -34,7 +34,7 @@ All output is color-coded, neatly formatted, and designed for offline ops.
 
 ## Usage
 
-![image](https://github.com/user-attachments/assets/7a373759-4bbd-4436-ac24-217f35d50371)
+![image](https://github.com/user-attachments/assets/bce1188a-1d1f-4abc-9234-55d0d995d2e5)
 
 
 
@@ -73,8 +73,7 @@ All output is color-coded, neatly formatted, and designed for offline ops.
 
 Displays an interactive panel:
 
-![image](https://github.com/user-attachments/assets/b25d93aa-9d86-4b5f-96c8-be1c2f95b7a1)
-
+![image](https://github.com/user-attachments/assets/fe384bd9-e1df-425f-b91a-aea555f6a794)
 
 ## Designed For
 
