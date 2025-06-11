@@ -219,6 +219,19 @@ function services_enum() {
  
   local separator="\n${purpleColour}$(printf '=%.0s' {1..100})${endColour}"
 
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}External Services Running${endColour}$separator"
+  ss -tulnp
+
+  netstat -tulnp
+
+
+  echo -e "$separator\n\t\t\t\t\t${purpleColour}Internal Services Running${endColour}$separator"
+  ss -tuln | grep -E '127\.0\.0\.1|::1'
+
+  netstat -tuln | grep '127.0.0.1'
+
+  lsof -i -nP | grep LISTEN
+
 
   echo -e "$separator\n\t\t\t\t\t${purpleColour}Runinng Processes${endColour}$separator"
   ps aux
