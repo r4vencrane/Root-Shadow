@@ -1,12 +1,14 @@
 <h1 align="center">
- R00T SHAD0W 
+ R00T SHAD0W
 </h1>
 
+
 <p align="center">
-  <img src="https://img.shields.io/badge/Bash-Script-green?style=for-the-badge&logo=gnubash" />
-  <img src="https://img.shields.io/badge/HACKING-R00T%20Shadow-blueviolet?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Interactive-Terminal-yellow?style=for-the-badge" />
+ <img src="https://img.shields.io/static/v1?style=for-the-badge&label=SHELL&message=Script&labelColor=0a0f0a&colorB=77ff00&logo=gnubash&logoColor=77ff00"/> 
+ <img src="https://img.shields.io/static/v1?style=for-the-badge&label=HACKING&message=R00T%20SHADOW&labelColor=0a0f0a&colorB=77ff00"/>
+ <img src="https://img.shields.io/static/v1?style=for-the-badge&label=TOOL&message=INTERACTIVE%20TERMINAL&labelColor=0a0f0a&colorB=77ff00&logo=skyliner&logoColor=77ff00"/>
 </p>
+
 
 
 ![image](https://github.com/user-attachments/assets/3106b3da-60c5-48a6-9cd5-461ac4f492b2)
@@ -100,10 +102,10 @@ Displays an interactive panel:
 Crafted by **r4venn**  
 Inspired by tools like `linenum.sh`, `LinPEAS`, and the grind of red teaming real boxes.
 
+---
 
-## License
-
-MIT License
-
-> Stay sharp, stay stealthy.
-
+<p align="center">
+  <a href="https://github.com/r4vencrane/Network-Recon/blob/main/LICENSE">
+    <img src="https://img.shields.io/static/v1?style=for-the-badge&label=LICENSE&message=MIT&labelColor=0a0f0a&colorB=77ff00"/>
+  </a>
+</p>
